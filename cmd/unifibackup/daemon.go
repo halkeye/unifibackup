@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gebn/unifibackup/v2/cmd/unifibackup/monitor"
-	"github.com/gebn/unifibackup/v2/cmd/unifibackup/uploader"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/gebn/unifibackup/v2/cmd/unifibackup/monitor"
+	"github.com/gebn/unifibackup/v2/cmd/unifibackup/uploader"
 )
 
 var (
@@ -36,8 +36,6 @@ var (
 
 // daemon waits for new backups, uploading them as they finish being written.
 func daemon(ctx context.Context, metricsListen, backupDir string, uploader *uploader.Uploader, timeout time.Duration) error {
-	log.SetFlags(0) // systemd already prefixes logs with the timestamp
-
 	wg := sync.WaitGroup{}
 	defer wg.Wait()
 

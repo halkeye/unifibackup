@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
-
-	"github.com/gebn/unifibackup/v2/cmd/unifibackup/uploader"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -15,6 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/spf13/cobra"
 	"go.uber.org/automaxprocs/maxprocs"
+
+	"github.com/gebn/unifibackup/v2/cmd/unifibackup/uploader"
 )
 
 var (
@@ -62,6 +63,16 @@ func main() {
 			}
 			s3client := s3.NewFromConfig(cfg)
 			uploader := uploader.New(s3client, flgBucket, flgPrefix)
+
+			log.SetFlags(0) // systemd already prefixes logs with the timestamp
+
+			log.Printf("Starting Daemon\n")
+			log.Printf("\tBucket: %s\n", flgBucket)
+			log.Printf("\tBucket Prefix: %s\n", flgPrefix)
+			log.Printf("\tMetrics Listen: %s\n", flgMetrics)
+			log.Printf("\tBackup Dir: %s\n", flgBackupDir)
+			log.Printf("\tTimeout: %s\n", flgTimeout.String())
+
 			return daemon(ctx, flgMetrics, flgBackupDir, uploader, flgTimeout)
 		},
 	}
@@ -73,7 +84,7 @@ func main() {
 	rootCmd.Flags().StringVar(&flgBucket,
 		"bucket",
 		"", // in hindsight, this should not have been a flag
-		"name of the S3 bucket to upload to (requird)")
+		"name of the S3 bucket to upload to (required)")
 	rootCmd.MarkFlagRequired("bucket")
 	rootCmd.Flags().StringVar(&flgPrefix,
 		"prefix",
