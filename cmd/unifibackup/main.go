@@ -41,11 +41,12 @@ func main() {
 	// we can access flags via cmd, but they are untyped; in practice it's
 	// easier to constrain the chaos to this function
 	var (
-		flgBackupDir string
-		flgBucket    string
-		flgPrefix    string
-		flgMetrics   string
-		flgTimeout   time.Duration
+		flgBackupDir          string
+		flgBucket             string
+		flgPrefix             string
+		flgMetrics            string
+		flagDualStackEndpoint bool
+		flgTimeout            time.Duration
 	)
 
 	rootCmd := &cobra.Command{
@@ -56,8 +57,10 @@ func main() {
 		Args:         cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx := cmd.Context()
-			cfg, err := config.LoadDefaultConfig(ctx,
-				config.WithUseDualStackEndpoint(aws.DualStackEndpointStateEnabled))
+			opts := []func(*config.LoadOptions) error{}
+			opts = append(opts, config.WithUseDualStackEndpoint(aws.DualStackEndpointStateEnabled))
+
+			cfg, err := config.LoadDefaultConfig(ctx, opts...)
 			if err != nil {
 				return fmt.Errorf("failed to initialise AWS SDK: %w", err)
 			}
@@ -72,6 +75,7 @@ func main() {
 			log.Printf("\tMetrics Listen: %s\n", flgMetrics)
 			log.Printf("\tBackup Dir: %s\n", flgBackupDir)
 			log.Printf("\tTimeout: %s\n", flgTimeout.String())
+			log.Printf("\tDual Stack Endpoints: %v\n", flagDualStackEndpoint)
 
 			return daemon(ctx, flgMetrics, flgBackupDir, uploader, flgTimeout)
 		},
@@ -94,6 +98,11 @@ func main() {
 		"metrics",
 		":9184",
 		"listen spec for the web server that exposes Prometheus metrics")
+	rootCmd.Flags().BoolVar(
+		&flagDualStackEndpoint,
+		"dual-stack-endpoint",
+		true,
+		"Enable dualstack connections talking to aws")
 	rootCmd.Flags().DurationVar(&flgTimeout,
 		"timeout",
 		5*time.Minute,
